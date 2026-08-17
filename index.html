@@ -199,7 +199,7 @@ body { font-family:'Plus Jakarta Sans',sans-serif; background:var(--paper); colo
 
 main { padding:20px; max-width:680px; margin:0 auto; }
 
-.summary-bar { display:grid; grid-template-columns:repeat(4,1fr); gap:10px; margin-bottom:20px; }
+.summary-bar { display:grid; grid-template-columns:repeat(5,1fr); gap:10px; margin-bottom:20px; }
 .sum-card { background:white; border:1px solid var(--border); border-radius:var(--r); padding:12px; text-align:center; }
 .sum-num { font-family:'Playfair Display',serif; font-size:24px; color:var(--ink); line-height:1; margin-bottom:3px; }
 .sum-label { font-size:10px; font-weight:600; text-transform:uppercase; letter-spacing:.5px; color:var(--ink3); }
@@ -419,7 +419,7 @@ main { padding:20px; max-width:680px; margin:0 auto; }
 .toast.show { opacity:1; transform:translateX(-50%) translateY(0); }
 
 @media (max-width:480px) {
-  .summary-bar { grid-template-columns:repeat(2,1fr); }
+  .summary-bar { grid-template-columns:repeat(3,1fr); }
   .preview-grid { grid-template-columns:1fr; }
   .preview-grid .pfield.full { grid-column:1; }
   .detail-grid { grid-template-columns:1fr; }
@@ -712,6 +712,7 @@ function render() {
   const todayCount = orders.filter(o => o.deliveryDate && dayKey(new Date(o.deliveryDate+'T12:00:00')) === today).length;
   const pending = orders.filter(o => o.status === 'pendiente').length;
   const totalVentas = orders.filter(o=>o.status==='entregado' && !o.cerrado).reduce((s,o) => s+(parseFloat(o.precioUsd)||0), 0);
+  const totalVentasBs = orders.filter(o=>o.status==='entregado' && !o.cerrado).reduce((s,o) => s+(parseFloat(o.precioBs)||0), 0);
 
   el.innerHTML = `
     <div class="summary-bar">
@@ -728,8 +729,12 @@ function render() {
         <div class="sum-label">Pendientes</div>
       </div>
       <div class="sum-card" onclick="setTab('finanzas',document.querySelector('[onclick*=finanzas]'))" style="cursor:pointer">
-        <div class="sum-num" style="color:var(--grass);font-size:18px">$${totalVentas.toFixed(0)}</div>
-        <div class="sum-label">Entregados 💰</div>
+        <div class="sum-num" style="color:var(--grass);font-size:18px">$${totalVentas.toLocaleString('en-US',{maximumFractionDigits:20})}</div>
+        <div class="sum-label">$ Entregados 💰</div>
+      </div>
+      <div class="sum-card" onclick="setTab('finanzas',document.querySelector('[onclick*=finanzas]'))" style="cursor:pointer">
+        <div class="sum-num" style="color:var(--grass);font-size:18px">Bs ${totalVentasBs.toLocaleString('es-VE',{maximumFractionDigits:20})}</div>
+        <div class="sum-label">Bs Entregados 💰</div>
       </div>
     </div>`;
 
@@ -2013,7 +2018,9 @@ function parseLocal(raw) {
   // ── DATE — labeled OR standalone on any line ──
   const today = new Date(); today.setHours(0,0,0,0);
   const addDays = (d,n) => { const x=new Date(d); x.setDate(x.getDate()+n); return x; };
-  const toISO  = d => d.toISOString().slice(0,10);
+  // Fecha LOCAL (no UTC) — toISOString() se corre a UTC y en Venezuela (UTC-4)
+  // eso hace que después de las 8pm ya "crea" que es el día siguiente.
+  const toISO  = d => d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0') + '-' + String(d.getDate()).padStart(2,'0');
   const dayNames = ['domingo','lunes','martes','miercoles','jueves','viernes','sabado'];
   const monthsMap = {enero:1,febrero:2,marzo:3,abril:4,mayo:5,junio:6,julio:7,agosto:8,septiembre:9,octubre:10,noviembre:11,diciembre:12};
 
@@ -2444,7 +2451,9 @@ window.deleteOrder = async function(id) {
 window.closeOverlay = function(id) { document.getElementById(id).classList.remove('show'); };
 window.maybeClose = function(e,id) { if(e.target===document.getElementById(id)) closeOverlay(id); };
 
-function dayKey(d) { return d.toISOString().slice(0,10); }
+// Fecha LOCAL (no UTC) — mismo motivo que en el parser: toISOString() se
+// corre a UTC y en Venezuela (UTC-4) eso adelanta el día después de las 8pm.
+function dayKey(d) { return d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0') + '-' + String(d.getDate()).padStart(2,'0'); }
 
 function formatDayLabel(k) {
   const today = dayKey(new Date());
