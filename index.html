@@ -2464,8 +2464,16 @@ function formatDateNice(iso) {
 
 function fmtMoney(usd, bs) {
   const parts = [];
-  if (usd) parts.push('$' + parseFloat(usd).toFixed(2).replace(/\.00$/, ''));
-  if (bs)  parts.push('Bs ' + parseFloat(bs).toLocaleString('es-VE', {maximumFractionDigits:0}));
+  // Se muestra la cifra EXACTA tal cual fue ingresada, sin redondear
+  // (maximumFractionDigits alto = nunca recorta decimales, solo agrupa miles).
+  if (usd !== null && usd !== undefined && usd !== '') {
+    const n = parseFloat(usd);
+    if (!isNaN(n)) parts.push('$' + n.toLocaleString('en-US', { maximumFractionDigits: 20 }));
+  }
+  if (bs !== null && bs !== undefined && bs !== '') {
+    const n = parseFloat(bs);
+    if (!isNaN(n)) parts.push('Bs ' + n.toLocaleString('es-VE', { maximumFractionDigits: 20 }));
+  }
   return parts.join(' · ') || '—';
 }
 
