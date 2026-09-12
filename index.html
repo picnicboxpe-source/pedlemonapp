@@ -729,8 +729,8 @@ function render() {
         <div class="sum-label">Pendientes</div>
       </div>
       <div class="sum-card" onclick="setTab('finanzas',document.querySelector('[onclick*=finanzas]'))" style="cursor:pointer">
-        <div class="sum-num" style="color:var(--grass);font-size:18px">$${totalVentas.toLocaleString('en-US',{maximumFractionDigits:20})}</div>
-        <div class="sum-label">$ Entregados 💰</div>
+        <div class="sum-num" style="color:var(--grass);font-size:18px">€${totalVentas.toLocaleString('en-US',{maximumFractionDigits:20})}</div>
+        <div class="sum-label">€ Entregados 💰</div>
       </div>
       <div class="sum-card" onclick="setTab('finanzas',document.querySelector('[onclick*=finanzas]'))" style="cursor:pointer">
         <div class="sum-num" style="color:var(--grass);font-size:18px">Bs ${totalVentasBs.toLocaleString('es-VE',{maximumFractionDigits:20})}</div>
@@ -1310,7 +1310,7 @@ function renderFinanzas() {
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px">
         <div><div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:var(--ink3);margin-bottom:5px">Descripción</div>
           <input id="exp-desc" class="field-input" type="text" placeholder="Ej: Insumos..." style="width:100%"></div>
-        <div><div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:var(--ink3);margin-bottom:5px">Monto $</div>
+        <div><div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:var(--ink3);margin-bottom:5px">Monto €</div>
           <input id="exp-amount" class="field-input" type="number" placeholder="0.00" min="0" step="0.01" style="width:100%"></div>
         <div><div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:var(--ink3);margin-bottom:5px">Fecha</div>
           <input id="exp-date" class="field-input" type="date" value="${today}" style="width:100%"></div>
@@ -1455,9 +1455,9 @@ async function renderBalance() {
         <div class="day-header${isToday?' is-today':''}${isPast?' is-past':''}" onclick="toggleDay(this)">
           <div class="day-title${isPast?' is-past':''}">${formatDayLabel(d)}</div>
           <div class="day-meta" style="gap:10px">
-            <span style="font-size:11px;color:var(--grass);font-weight:600">+$${ing.toFixed(0)}</span>
-            <span style="font-size:11px;color:var(--rose);font-weight:600">-$${gas.toFixed(0)}</span>
-            <span style="font-size:12px;font-weight:700;color:${ganC};background:${ganBgD};padding:3px 10px;border-radius:100px">${pos?'+':''}$${gan.toFixed(0)}</span>
+            <span style="font-size:11px;color:var(--grass);font-weight:600">+€${ing.toFixed(0)}</span>
+            <span style="font-size:11px;color:var(--rose);font-weight:600">-€${gas.toFixed(0)}</span>
+            <span style="font-size:12px;font-weight:700;color:${ganC};background:${ganBgD};padding:3px 10px;border-radius:100px">${pos?'+':''}€${gan.toFixed(0)}</span>
             ${chev(open)}
           </div>
         </div>
@@ -1465,15 +1465,15 @@ async function renderBalance() {
           <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;padding:12px 4px 4px">
             <div style="background:var(--grass-ll);border-radius:var(--r);padding:12px;text-align:center">
               <div style="font-size:10px;color:var(--ink3);font-weight:700;text-transform:uppercase;letter-spacing:.4px;margin-bottom:4px">Ingresos</div>
-              <div style="font-family:'Playfair Display',serif;font-size:18px;color:var(--grass)">$${ing.toFixed(0)}</div>
+              <div style="font-family:'Playfair Display',serif;font-size:18px;color:var(--grass)">€${ing.toFixed(0)}</div>
             </div>
             <div style="background:var(--rose-l);border-radius:var(--r);padding:12px;text-align:center">
               <div style="font-size:10px;color:var(--ink3);font-weight:700;text-transform:uppercase;letter-spacing:.4px;margin-bottom:4px">Gastos</div>
-              <div style="font-family:'Playfair Display',serif;font-size:18px;color:var(--rose)">$${gas.toFixed(0)}</div>
+              <div style="font-family:'Playfair Display',serif;font-size:18px;color:var(--rose)">€${gas.toFixed(0)}</div>
             </div>
             <div style="background:${ganBgD};border-radius:var(--r);padding:12px;text-align:center">
               <div style="font-size:10px;color:var(--ink3);font-weight:700;text-transform:uppercase;letter-spacing:.4px;margin-bottom:4px">Ganancia</div>
-              <div style="font-family:'Playfair Display',serif;font-size:18px;color:${ganC}">${pos?'+':''}$${gan.toFixed(0)}</div>
+              <div style="font-family:'Playfair Display',serif;font-size:18px;color:${ganC}">${pos?'+':''}€${gan.toFixed(0)}</div>
             </div>
           </div>
         </div>
@@ -1486,7 +1486,7 @@ async function renderBalance() {
     <div style="background:var(--ink);border-radius:var(--rr);padding:16px 20px;margin-bottom:14px;display:flex;align-items:center;justify-content:space-between">
       <div>
         <div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.6px;color:rgba(255,255,255,.5);margin-bottom:4px">Acumulado del mes</div>
-        <div style="font-family:'Playfair Display',serif;font-size:26px;color:${totalMes>=0?'#7FDFAA':'#F4A0A0'}">${totalMes>=0?'+':''}$${totalMes.toFixed(0)}</div>
+        <div style="font-family:'Playfair Display',serif;font-size:26px;color:${totalMes>=0?'#7FDFAA':'#F4A0A0'}">${totalMes>=0?'+':''}€${totalMes.toFixed(0)}</div>
         <div style="font-size:11px;color:rgba(255,255,255,.4);margin-top:2px">Suma de cierres de ${new Date(today+'T12:00:00').toLocaleDateString('es-PE',{month:'long',year:'numeric'})}</div>
       </div>
       <button onclick="resetBalance()" style="flex-shrink:0;padding:9px 18px;background:rgba(255,255,255,.1);color:rgba(255,255,255,.8);border:1.5px solid rgba(255,255,255,.2);border-radius:100px;font-family:'Plus Jakarta Sans',sans-serif;font-size:12px;font-weight:600;cursor:pointer;transition:background .2s" onmouseover="this.style.background='rgba(255,255,255,.2)'" onmouseout="this.style.background='rgba(255,255,255,.1)'">
@@ -1503,15 +1503,15 @@ async function renderBalance() {
     </div>
     <div class="summary-bar" style="grid-template-columns:repeat(3,1fr);margin-bottom:20px">
       <div class="sum-card">
-        <div class="sum-num" style="color:var(--grass)">$${totalIng.toFixed(0)}</div>
+        <div class="sum-num" style="color:var(--grass)">€${totalIng.toFixed(0)}</div>
         <div class="sum-label">Ingresos totales</div>
       </div>
       <div class="sum-card">
-        <div class="sum-num" style="color:var(--rose)">$${totalGas.toFixed(0)}</div>
+        <div class="sum-num" style="color:var(--rose)">€${totalGas.toFixed(0)}</div>
         <div class="sum-label">Gastos totales</div>
       </div>
       <div class="sum-card" style="border:1.5px solid ${ganBorder};background:${ganBg}">
-        <div class="sum-num" style="color:${ganColor}">$${totalGan.toFixed(0)}</div>
+        <div class="sum-num" style="color:${ganColor}">€${totalGan.toFixed(0)}</div>
         <div class="sum-label">Ganancia neta</div>
       </div>
     </div>
@@ -1600,9 +1600,9 @@ window.cerrarDia = async function() {
   const confirmar = confirm(
     `¿Cerrar día y hacer cuadre?\n\n` +
     `Pedidos entregados : ${cantidadPedidos}\n` +
-    `Ingresos           : $${totalIngresos.toFixed(2)}\n` +
-    `Gastos del período : $${totalGastos.toFixed(2)}\n` +
-    `Balance            : $${balanceDia.toFixed(2)}\n\n` +
+    `Ingresos           : €${totalIngresos.toFixed(2)}\n` +
+    `Gastos del período : €${totalGastos.toFixed(2)}\n` +
+    `Balance            : €${balanceDia.toFixed(2)}\n\n` +
     `Los gastos se borrarán y quedarán en 0.\n` +
     `Los pedidos entregados se marcarán como cerrados.`
   );
@@ -1635,7 +1635,7 @@ window.cerrarDia = async function() {
     expenses = [];
 
     showToast(
-      `✅ Día cerrado · Balance: ${balanceDia >= 0 ? '+' : ''}$${balanceDia.toFixed(2)}`
+      `✅ Día cerrado · Balance: ${balanceDia >= 0 ? '+' : ''}€${balanceDia.toFixed(2)}`
     );
 
     // 5. Re-renderizar la vista activa para que se vea el reset al instante
@@ -2246,7 +2246,7 @@ function previewFieldsHTML(d) {
     ${pf('medio','📣 Medio',d.medio)}
     ${pf('address','🏠 Dirección de envío',d.address,true)}
     ${pf('agencia','🏷️ Código de agencia',d.agencia)}
-    ${pf('envioUsd','🚚 Costo de envío US$',d.envioUsd)}
+    ${pf('envioUsd','🚚 Costo de envío €',d.envioUsd)}
     ${pf('envioBs','🚚 Costo de envío Bs',d.envioBs)}
   `;
 }
@@ -2437,7 +2437,7 @@ window.openDetail = function(id) {
     </div>
 
     ${(o.precioUsd||o.precioBs)?`<div class="detail-section">
-      <div class="detail-section-title">💵 Total</div>
+      <div class="detail-section-title">💶 Total</div>
       <div style="font-family:'Playfair Display',serif;font-size:26px;color:var(--grass)">${fmtMoney(o.precioUsd,o.precioBs)}</div>
     </div>`:''}
 
@@ -2547,7 +2547,7 @@ function fmtMoney(usd, bs) {
   // (maximumFractionDigits alto = nunca recorta decimales, solo agrupa miles).
   if (usd !== null && usd !== undefined && usd !== '') {
     const n = parseFloat(usd);
-    if (!isNaN(n)) parts.push('$' + n.toLocaleString('en-US', { maximumFractionDigits: 20 }));
+    if (!isNaN(n)) parts.push('€' + n.toLocaleString('en-US', { maximumFractionDigits: 20 }));
   }
   if (bs !== null && bs !== undefined && bs !== '') {
     const n = parseFloat(bs);
