@@ -199,7 +199,7 @@ body { font-family:'Plus Jakarta Sans',sans-serif; background:var(--paper); colo
 
 main { padding:20px; max-width:680px; margin:0 auto; }
 
-.summary-bar { display:grid; grid-template-columns:repeat(4,1fr); gap:10px; margin-bottom:20px; }
+.summary-bar { display:grid; grid-template-columns:repeat(5,1fr); gap:10px; margin-bottom:20px; }
 .sum-card { background:white; border:1px solid var(--border); border-radius:var(--r); padding:12px; text-align:center; }
 .sum-num { font-family:'Playfair Display',serif; font-size:24px; color:var(--ink); line-height:1; margin-bottom:3px; }
 .sum-label { font-size:10px; font-weight:600; text-transform:uppercase; letter-spacing:.5px; color:var(--ink3); }
@@ -419,7 +419,7 @@ main { padding:20px; max-width:680px; margin:0 auto; }
 .toast.show { opacity:1; transform:translateX(-50%) translateY(0); }
 
 @media (max-width:480px) {
-  .summary-bar { grid-template-columns:repeat(2,1fr); }
+  .summary-bar { grid-template-columns:repeat(3,1fr); }
   .preview-grid { grid-template-columns:1fr; }
   .preview-grid .pfield.full { grid-column:1; }
   .detail-grid { grid-template-columns:1fr; }
@@ -496,7 +496,7 @@ main { padding:20px; max-width:680px; margin:0 auto; }
     <p class="sheet-sub">Pega el mensaje del cliente tal como llegó. El sistema lo interpreta y organiza.</p>
     <div id="import-step-1">
       <div class="wa-example">
-        💬 <strong>Ejemplo:</strong> Fecha: 30/03 · Nombre: María Pérez · Teléfono: 04141234567 · Pedido: 2 correas cuero negro + 1 bolso mini beige · Medio: Instagram · Medio de pago: Pago móvil · Dirección de envío: Av. Bolívar, Chacao, Caracas · Código de agencia: MRW-4521 · Costo de envío: $3 / Bs 110 · Total: $25 / Bs 900
+        💬 <strong>Ejemplo:</strong> Fecha: 30/03 · Pedido: 2 correas cuero negro + 1 bolso mini beige · Cantidad: 2 · Nombre: María Pérez · Teléfono: 04141234567 · Entrega: Domicilio · Método de pago: Pago móvil · Monto Bs.: 1511,22 · Euros: 5 · Tasa Euro: 970,22 · Estatus: Entregado
       </div>
       <div style="margin-bottom:14px">
         <textarea class="wa-textarea" id="wa-input" placeholder="Pega aquí el mensaje de WhatsApp..."></textarea>
@@ -661,7 +661,7 @@ window.saveOrder = async function(orderData) {
     await addDoc(collection(db, 'pedidosLC'), {
       ...orderData,
       createdAt: serverTimestamp(),
-      status: 'pendiente',
+      status: orderData.status || 'pendiente',
       cerrado: false,
       sortOrder: Date.now()   // higher = later in day list
     });
@@ -712,6 +712,7 @@ function render() {
   const todayCount = orders.filter(o => o.deliveryDate && dayKey(new Date(o.deliveryDate+'T12:00:00')) === today).length;
   const pending = orders.filter(o => o.status === 'pendiente').length;
   const totalVentas = orders.filter(o=>o.status==='entregado' && !o.cerrado).reduce((s,o) => s+(parseFloat(o.precioUsd)||0), 0);
+  const totalVentasBs = orders.filter(o=>o.status==='entregado' && !o.cerrado).reduce((s,o) => s+(parseFloat(o.precioBs)||0), 0);
 
   el.innerHTML = `
     <div class="summary-bar">
@@ -728,8 +729,12 @@ function render() {
         <div class="sum-label">Pendientes</div>
       </div>
       <div class="sum-card" onclick="setTab('finanzas',document.querySelector('[onclick*=finanzas]'))" style="cursor:pointer">
-        <div class="sum-num" style="color:var(--grass);font-size:18px">$${totalVentas.toFixed(0)}</div>
-        <div class="sum-label">Entregados 💰</div>
+        <div class="sum-num" style="color:var(--grass);font-size:18px">$${totalVentas.toLocaleString('en-US',{maximumFractionDigits:20})}</div>
+        <div class="sum-label">$ Entregados 💰</div>
+      </div>
+      <div class="sum-card" onclick="setTab('finanzas',document.querySelector('[onclick*=finanzas]'))" style="cursor:pointer">
+        <div class="sum-num" style="color:var(--grass);font-size:18px">Bs ${totalVentasBs.toLocaleString('es-VE',{maximumFractionDigits:20})}</div>
+        <div class="sum-label">Bs Entregados 💰</div>
       </div>
     </div>`;
 
@@ -1939,10 +1944,23 @@ function initNavDrag() {
 document.addEventListener('DOMContentLoaded', () => setTimeout(initNavDrag, 600));
 
 // ── IMPORT ──
+// Formato fijo que aparece precargado en la ventana de importar, para llenar a mano
+const WA_TEMPLATE = `Fecha: 
+Pedido:
+Cantidad:
+Nombre:
+Teléfono:
+Entrega:
+Método de pago:
+Monto Bs:
+Euros:
+Tasa Euro:
+Estatus:`;
+
 window.openImport = function() {
   editandoId = null;
   parsedDraft = null;
-  document.getElementById('wa-input').value = '';
+  document.getElementById('wa-input').value = WA_TEMPLATE;
   document.getElementById('import-step-1').style.display = 'block';
   document.getElementById('import-step-2').style.display = 'none';
   document.getElementById('ov-import').classList.add('show');
@@ -1977,6 +1995,7 @@ function parseLocal(raw) {
   // otra etiqueta conocida (con o sin salto de línea, con o sin "·" de por medio).
   const LABELS = [
     'fecha de entrega','fecha','entrega',
+    'cantidad',
     'nombre de client@?','nombre del?a? client@?','nombre','cliente',
     'tel[eé]fono','tel','cel(?:ular)?','whats?app',
     'pedido','producto','prod','art[íi]culos?',
@@ -1984,6 +2003,10 @@ function parseLocal(raw) {
     'direcci[oó]n de env[íi]o','direcci[oó]n','domicilio','dir',
     'c[oó]digo de agencia','agencia',
     'costo de env[íi]o','env[íi]o','delivery',
+    'monto bs\\.?s?','monto',
+    'euros?',
+    'tasa (?:del?\\s*)?euro','tasa',
+    'estatus','estado',
     'total','precio',
   ];
   const STOP = `(?=\\n|·|$|(?:${LABELS.join('|')})(?![a-zA-ZÁÉÍÓÚÜÑáéíóúüñ])\\s*:)`;
@@ -2013,7 +2036,9 @@ function parseLocal(raw) {
   // ── DATE — labeled OR standalone on any line ──
   const today = new Date(); today.setHours(0,0,0,0);
   const addDays = (d,n) => { const x=new Date(d); x.setDate(x.getDate()+n); return x; };
-  const toISO  = d => d.toISOString().slice(0,10);
+  // Fecha LOCAL (no UTC) — toISOString() se corre a UTC y en Venezuela (UTC-4)
+  // eso hace que después de las 8pm ya "crea" que es el día siguiente.
+  const toISO  = d => d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0') + '-' + String(d.getDate()).padStart(2,'0');
   const dayNames = ['domingo','lunes','martes','miercoles','jueves','viernes','sabado'];
   const monthsMap = {enero:1,febrero:2,marzo:3,abril:4,mayo:5,junio:6,julio:7,agosto:8,septiembre:9,octubre:10,noviembre:11,diciembre:12};
 
@@ -2055,7 +2080,7 @@ function parseLocal(raw) {
   }
 
   let deliveryDate = null;
-  const dateRaw = extract(['fecha de entrega','fecha(?!\\s*de\\s*entrega)','entrega']);
+  const dateRaw = extract(['fecha de entrega','fecha(?!\\s*de\\s*entrega)']);
   if (dateRaw) deliveryDate = parseAnyDate(dateRaw);
   if (!deliveryDate) {
     for (const l of lines) {
@@ -2118,6 +2143,39 @@ function parseLocal(raw) {
   const envio  = extractMoney(['costo de env[íi]o','env[íi]o','delivery']);
   const totalM = extractMoney(['total','precio']);
 
+  // ── CANTIDAD ──
+  const cantidad = extract(['cantidad']);
+
+  // ── ENTREGA (tipo/lugar de entrega, distinto de la fecha) ──
+  const entrega = extract(['entrega']);
+
+  // ── Extractor simple para un número suelto (con o sin símbolo) ──
+  function extractPlain(labelFragments) {
+    const raw = extract(labelFragments);
+    if (!raw) return null;
+    const m = raw.match(/([\d]+(?:[.,]\d{1,2})?)/);
+    return m ? m[1].replace(',','.') : raw;
+  }
+
+  // ── MONTO BS. / DÓLARES / TASA EURO ──
+  const montoBs = extractPlain(['monto bs\\.?s?']);
+  const euros   = extractPlain(['euros?']);
+  const tasaEuro = extractPlain(['tasa (?:del?\\s*)?euro']);
+
+  // ── ESTATUS — normalizado a los valores fijos del panel ──
+  const estatusRaw = extract(['estatus','estado']);
+  function normalizeStatus(s) {
+    if (!s) return null;
+    const l = s.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'');
+    if (/entregad/.test(l)) return 'entregado';
+    if (/en\s*-?\s*ruta|camino/.test(l)) return 'en-ruta';
+    if (/proceso/.test(l)) return 'en-proceso';
+    if (/confirmad/.test(l)) return 'confirmado';
+    if (/pendient/.test(l)) return 'pendiente';
+    return null;
+  }
+  const status = normalizeStatus(estatusRaw);
+
   if (!clientName) { notes.push('No se detectó el nombre del cliente'); confidence='medium'; }
   if (!product) { notes.push('No se detectó el pedido'); confidence='medium'; }
 
@@ -2130,8 +2188,11 @@ function parseLocal(raw) {
   return {
     clientName, phone, deliveryDate, address,
     agencia: agenciaFinal, product, medio: medioFinal, medioPago: medioPagoFinal,
+    cantidad, entrega,
     envioUsd: envio.usd, envioBs: envio.bs,
-    precioUsd: totalM.usd, precioBs: totalM.bs,
+    precioUsd: euros || totalM.usd,
+    precioBs: montoBs || totalM.bs,
+    tasaEuro, status,
     notes: notes.length ? notes.join('. ') : null, confidence
   };
 }
@@ -2172,17 +2233,21 @@ function showPreview(d) {
 function previewFieldsHTML(d) {
   return `
     ${pf('deliveryDate','📅 Fecha',d.deliveryDate,false,true)}
-    ${pf('clientName','👤 Nombre de Client@',d.clientName,true)}
-    ${pf('phone','📱 Teléfono',d.phone)}
-    ${pf('medio','📣 Medio',d.medio)}
     ${pfTA('product','🎁 Pedido',d.product)}
-    ${pf('medioPago','💳 Medio de pago',d.medioPago)}
+    ${pf('cantidad','🔢 Cantidad',d.cantidad)}
+    ${pf('clientName','👤 Nombre',d.clientName,true)}
+    ${pf('phone','📱 Teléfono',d.phone)}
+    ${pf('entrega','🚚 Entrega',d.entrega)}
+    ${pf('medioPago','💳 Método de pago',d.medioPago)}
+    ${pf('precioBs','💵 Monto Bs',d.precioBs)}
+    ${pf('precioUsd','💶 Euros',d.precioUsd)}
+    ${pf('tasaEuro','💱 Tasa Euro',d.tasaEuro)}
+    ${pfStatus('status','🏷️ Estatus',d.status)}
+    ${pf('medio','📣 Medio',d.medio)}
     ${pf('address','🏠 Dirección de envío',d.address,true)}
     ${pf('agencia','🏷️ Código de agencia',d.agencia)}
     ${pf('envioUsd','🚚 Costo de envío US$',d.envioUsd)}
     ${pf('envioBs','🚚 Costo de envío Bs',d.envioBs)}
-    ${pf('precioUsd','💵 Total US$',d.precioUsd)}
-    ${pf('precioBs','💵 Total Bs',d.precioBs)}
   `;
 }
 
@@ -2192,6 +2257,17 @@ function pf(key, label, val, full=false, isDate=false) {
   const safe = has ? String(val).replace(/"/g,'&quot;') : '';
   if (isDate) return `<div class="${cls}"><div class="pfield-label">${label}</div><input class="field-input" type="date" data-key="${key}" value="${safe}"></div>`;
   return `<div class="${cls}"><div class="pfield-label">${label}</div><input class="field-input" type="text" data-key="${key}" value="${safe}" placeholder="${has?'':'(no detectado)'}"></div>`;
+}
+
+// Select de estatus — siempre guarda uno de los valores fijos que usa el panel
+function pfStatus(key, label, val) {
+  const options = ['pendiente','confirmado','en-proceso','en-ruta','entregado'];
+  const selected = options.includes(val) ? val : 'pendiente';
+  return `<div class="pfield"><div class="pfield-label">${label}</div>
+    <select class="field-input" data-key="${key}">
+      ${options.map(o => `<option value="${o}" ${o===selected?'selected':''}>${labelStatus(o)}</option>`).join('')}
+    </select>
+  </div>`;
 }
 
 function pfTA(key, label, val) {
@@ -2264,7 +2340,8 @@ window.editarPedido = function(id) {
 
   // Mostrar el formulario prellenado con los datos actuales
   const campos = ['clientName','phone','deliveryDate','address','agencia','product',
-    'medio','medioPago','envioUsd','envioBs','precioUsd','precioBs'];
+    'medio','medioPago','envioUsd','envioBs','precioUsd','precioBs',
+    'cantidad','entrega','tasaEuro','status'];
   const d = {};
   campos.forEach(k => { d[k] = o[k] || null; });
   d.confidence = 'high';
@@ -2444,7 +2521,9 @@ window.deleteOrder = async function(id) {
 window.closeOverlay = function(id) { document.getElementById(id).classList.remove('show'); };
 window.maybeClose = function(e,id) { if(e.target===document.getElementById(id)) closeOverlay(id); };
 
-function dayKey(d) { return d.toISOString().slice(0,10); }
+// Fecha LOCAL (no UTC) — mismo motivo que en el parser: toISOString() se
+// corre a UTC y en Venezuela (UTC-4) eso adelanta el día después de las 8pm.
+function dayKey(d) { return d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0') + '-' + String(d.getDate()).padStart(2,'0'); }
 
 function formatDayLabel(k) {
   const today = dayKey(new Date());
@@ -2464,8 +2543,16 @@ function formatDateNice(iso) {
 
 function fmtMoney(usd, bs) {
   const parts = [];
-  if (usd) parts.push('$' + parseFloat(usd).toFixed(2).replace(/\.00$/, ''));
-  if (bs)  parts.push('Bs ' + parseFloat(bs).toLocaleString('es-VE', {maximumFractionDigits:0}));
+  // Se muestra la cifra EXACTA tal cual fue ingresada, sin redondear
+  // (maximumFractionDigits alto = nunca recorta decimales, solo agrupa miles).
+  if (usd !== null && usd !== undefined && usd !== '') {
+    const n = parseFloat(usd);
+    if (!isNaN(n)) parts.push('$' + n.toLocaleString('en-US', { maximumFractionDigits: 20 }));
+  }
+  if (bs !== null && bs !== undefined && bs !== '') {
+    const n = parseFloat(bs);
+    if (!isNaN(n)) parts.push('Bs ' + n.toLocaleString('es-VE', { maximumFractionDigits: 20 }));
+  }
   return parts.join(' · ') || '—';
 }
 
