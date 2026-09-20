@@ -2423,6 +2423,7 @@ window.openDetail = function(id) {
         <div class="dfield"><div class="dfield-label">📱 Teléfono</div><div class="dfield-val ${!o.phone?'muted':''}">${o.phone||'—'}</div></div>
         <div class="dfield"><div class="dfield-label">📣 Medio</div><div class="dfield-val ${!o.medio?'muted':''}">${o.medio||'—'}</div></div>
         <div class="dfield"><div class="dfield-label">💳 Medio de pago</div><div class="dfield-val ${!o.medioPago?'muted':''}">${o.medioPago||'—'}</div></div>
+        <div class="dfield"><div class="dfield-label">🔢 Cantidad</div><div class="dfield-val ${!o.cantidad?'muted':''}">${o.cantidad||'—'}</div></div>
       </div>
     </div>
 
@@ -2430,15 +2431,17 @@ window.openDetail = function(id) {
       <div class="detail-section-title">🚚 Envío</div>
       <div class="detail-grid">
         <div class="dfield"><div class="dfield-label">📅 Fecha</div><div class="dfield-val ${!o.deliveryDate?'muted':''}">${o.deliveryDate?formatDateNice(o.deliveryDate):'No especificada'}</div></div>
+        <div class="dfield"><div class="dfield-label">🚚 Entrega</div><div class="dfield-val ${!o.entrega?'muted':''}">${o.entrega||'—'}</div></div>
         <div class="dfield"><div class="dfield-label">🏷️ Código de agencia</div><div class="dfield-val ${!o.agencia?'muted':''}">${o.agencia||'—'}</div></div>
         <div class="dfield full"><div class="dfield-label">🏠 Dirección de envío</div><div class="dfield-val ${!o.address?'muted':''}">${o.address||'—'}</div></div>
         <div class="dfield"><div class="dfield-label">Costo de envío</div><div class="dfield-val ${(!o.envioUsd&&!o.envioBs)?'muted':''}">${fmtMoney(o.envioUsd,o.envioBs)}</div></div>
       </div>
     </div>
 
-    ${(o.precioUsd||o.precioBs)?`<div class="detail-section">
+    ${(o.precioUsd||o.precioBs||o.tasaEuro)?`<div class="detail-section">
       <div class="detail-section-title">💶 Total</div>
       <div style="font-family:'Playfair Display',serif;font-size:26px;color:var(--grass)">${fmtMoney(o.precioUsd,o.precioBs)}</div>
+      ${o.tasaEuro?`<div style="font-size:12px;color:var(--ink3);margin-top:4px">💱 Tasa Euro: ${o.tasaEuro}</div>`:''}
     </div>`:''}
 
     <div style="font-size:11px;color:var(--ink3);margin-top:8px">
