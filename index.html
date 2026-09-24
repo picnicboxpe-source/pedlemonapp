@@ -502,7 +502,7 @@ main { padding:20px; max-width:680px; margin:0 auto; }
     <p class="sheet-sub">Pega el mensaje del cliente tal como llegó. El sistema lo interpreta y organiza.</p>
     <div id="import-step-1">
       <div class="wa-example">
-        💬 <strong>Ejemplo:</strong> Fecha: 30/03 · Pedido: 2 correas cuero negro + 1 bolso mini beige · Cantidad: 2 · Nombre: María Pérez · Teléfono: 04141234567 · Entrega: Domicilio · Método de pago: Pago móvil · Monto Bs.: 1511,22 · Euros: 5 · Tasa Euro: 970,22 · Estatus: Entregado
+        💬 <strong>Ejemplo:</strong> Fecha en que se vendió: 28/03 · Fecha en que se entregó: 30/03 · Pedido: 2 correas cuero negro + 1 bolso mini beige · Cantidad: 2 · Nombre: María Pérez · Teléfono: 04141234567 · Entrega: Domicilio · Método de pago: Pago móvil · Monto Bs.: 1511,22 · Euros: 5 · Tasa Euro: 970,22 · Estatus: Entregado
       </div>
       <div style="margin-bottom:14px">
         <textarea class="wa-textarea" id="wa-input" placeholder="Pega aquí el mensaje de WhatsApp..."></textarea>
@@ -1969,7 +1969,8 @@ document.addEventListener('DOMContentLoaded', () => setTimeout(initNavDrag, 600)
 
 // ── IMPORT ──
 // Formato fijo que aparece precargado en la ventana de importar, para llenar a mano
-const WA_TEMPLATE = `Fecha: 
+const WA_TEMPLATE = `Fecha en que se vendió: 
+Fecha en que se entregó: 
 Pedido:
 Cantidad:
 Nombre:
@@ -2018,7 +2019,9 @@ function parseLocal(raw) {
   // "muro de contención": la captura de un campo se detiene apenas empieza
   // otra etiqueta conocida (con o sin salto de línea, con o sin "·" de por medio).
   const LABELS = [
-    'fecha de entrega','fecha','entrega',
+    'fecha en que se vendi[oó]','fecha de venta',
+    'fecha en que se entreg[oó]','fecha de entrega',
+    'fecha','entrega',
     'cantidad',
     'nombre de client@?','nombre del?a? client@?','nombre','cliente',
     'tel[eé]fono','tel','cel(?:ular)?','whats?app',
@@ -2103,16 +2106,22 @@ function parseLocal(raw) {
     return null;
   }
 
-  let deliveryDate = null;
-  const dateRaw = extract(['fecha de entrega','fecha(?!\\s*de\\s*entrega)']);
+  let deliveryDate = null; // Fecha de venta
+  const dateRaw = extract(['fecha en que se vendi[oó]','fecha de venta','fecha(?!\\s*de\\s*entrega)']);
   if (dateRaw) deliveryDate = parseAnyDate(dateRaw);
+
+  let fechaEntrega = null;
+  const fechaEntregaRaw = extract(['fecha en que se entreg[oó]','fecha de entrega']);
+  if (fechaEntregaRaw) fechaEntrega = parseAnyDate(fechaEntregaRaw);
+
   if (!deliveryDate) {
     for (const l of lines) {
+      if (fechaEntregaRaw && l.includes(fechaEntregaRaw)) continue; // no confundir con la línea de entrega
       const d = parseAnyDate(l);
       if (d) { deliveryDate = d; break; }
     }
   }
-  if (!deliveryDate) { notes.push('No se detectó fecha'); confidence='medium'; }
+  if (!deliveryDate) { notes.push('No se detectó fecha de venta'); confidence='medium'; }
 
   // ── PEDIDO (producto) ──
   let product = extract(['pedido','producto','prod','art[íi]culos?']);
@@ -2210,7 +2219,7 @@ function parseLocal(raw) {
   const medioPagoFinal = medioPago || 'No';
 
   return {
-    clientName, phone, deliveryDate, address,
+    clientName, phone, deliveryDate, fechaEntrega, address,
     agencia: agenciaFinal, product, medio: medioFinal, medioPago: medioPagoFinal,
     cantidad, entrega,
     envioUsd: envio.usd, envioBs: envio.bs,
@@ -2256,7 +2265,8 @@ function showPreview(d) {
 // Campos compartidos entre "Importar" y "Editar pedido"
 function previewFieldsHTML(d) {
   return `
-    ${pf('deliveryDate','📅 Fecha',d.deliveryDate,false,true)}
+    ${pf('deliveryDate','📅 Fecha de venta',d.deliveryDate,false,true)}
+    ${pf('fechaEntrega','📅 Fecha de entrega',d.fechaEntrega,false,true)}
     ${pfTA('product','🎁 Pedido',d.product)}
     ${pf('cantidad','🔢 Cantidad',d.cantidad)}
     ${pf('clientName','👤 Nombre',d.clientName,true)}
@@ -2365,7 +2375,7 @@ window.editarPedido = function(id) {
   // Mostrar el formulario prellenado con los datos actuales
   const campos = ['clientName','phone','deliveryDate','address','agencia','product',
     'medio','medioPago','envioUsd','envioBs','precioUsd','precioBs',
-    'cantidad','entrega','tasaEuro','status'];
+    'cantidad','entrega','tasaEuro','status','fechaEntrega'];
   const d = {};
   campos.forEach(k => { d[k] = o[k] || null; });
   d.confidence = 'high';
@@ -2454,7 +2464,8 @@ window.openDetail = function(id) {
     <div class="detail-section">
       <div class="detail-section-title">🚚 Envío</div>
       <div class="detail-grid">
-        <div class="dfield"><div class="dfield-label">📅 Fecha</div><div class="dfield-val ${!o.deliveryDate?'muted':''}">${o.deliveryDate?formatDateNice(o.deliveryDate):'No especificada'}</div></div>
+        <div class="dfield"><div class="dfield-label">📅 Fecha de venta</div><div class="dfield-val ${!o.deliveryDate?'muted':''}">${o.deliveryDate?formatDateNice(o.deliveryDate):'No especificada'}</div></div>
+        <div class="dfield"><div class="dfield-label">📅 Fecha de entrega</div><div class="dfield-val ${!o.fechaEntrega?'muted':''}">${o.fechaEntrega?formatDateNice(o.fechaEntrega):'No especificada'}</div></div>
         <div class="dfield"><div class="dfield-label">🚚 Entrega</div><div class="dfield-val ${!o.entrega?'muted':''}">${o.entrega||'—'}</div></div>
         <div class="dfield"><div class="dfield-label">🏷️ Código de agencia</div><div class="dfield-val ${!o.agencia?'muted':''}">${o.agencia||'—'}</div></div>
         <div class="dfield full"><div class="dfield-label">🏠 Dirección de envío</div><div class="dfield-val ${!o.address?'muted':''}">${o.address||'—'}</div></div>
