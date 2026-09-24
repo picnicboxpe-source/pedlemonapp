@@ -204,6 +204,12 @@ main { padding:20px; max-width:680px; margin:0 auto; }
 .sum-num { font-family:'Playfair Display',serif; font-size:24px; color:var(--ink); line-height:1; margin-bottom:3px; }
 .sum-label { font-size:10px; font-weight:600; text-transform:uppercase; letter-spacing:.5px; color:var(--ink3); }
 
+.status-filter-bar { display:flex; align-items:center; gap:10px; background:white; border:1px solid var(--border); border-radius:var(--r); padding:10px 14px; margin-bottom:16px; }
+.status-filter-bar label { font-size:11px; font-weight:700; text-transform:uppercase; letter-spacing:.5px; color:var(--ink3); white-space:nowrap; }
+.status-filter-select { flex:1; border:1.5px solid var(--border); border-radius:100px; padding:8px 14px; font-family:'Plus Jakarta Sans',sans-serif; font-size:13px; font-weight:600; color:var(--ink); background:white; cursor:pointer; -webkit-appearance:none; appearance:none; }
+.status-filter-select:focus { border-color:var(--grass); outline:none; }
+.status-filter-clear { font-size:11px; color:var(--ink3); background:none; border:none; cursor:pointer; text-decoration:underline; font-family:inherit; white-space:nowrap; }
+
 .day-group { margin-bottom:12px; }
 .day-header {
   display:flex; align-items:center; justify-content:space-between;
@@ -550,6 +556,7 @@ const db = getFirestore(app);
 let orders = [];
 let expenses = [];
 let currentTab = 'todos';
+let statusFilter = ''; // '' = todos los estados; si no, uno de: pendiente, confirmado, en-proceso, en-ruta, entregado
 let parsedDraft = null;
 let editandoId = null;   // ID del pedido en edición (null = modo creación)
 let unsubOrders = null;
@@ -707,12 +714,15 @@ function render() {
   if (currentTab === 'balance')   { renderBalance();   return; }
   if (currentTab === 'insumos')   { renderInsumos();   return; }
   let list = filterOrders();
+  if (statusFilter) list = list.filter(o => o.status === statusFilter);
 
   const today = dayKey(new Date());
   const todayCount = orders.filter(o => o.deliveryDate && dayKey(new Date(o.deliveryDate+'T12:00:00')) === today).length;
   const pending = orders.filter(o => o.status === 'pendiente').length;
   const totalVentas = orders.filter(o=>o.status==='entregado' && !o.cerrado).reduce((s,o) => s+(parseFloat(o.precioUsd)||0), 0);
   const totalVentasBs = orders.filter(o=>o.status==='entregado' && !o.cerrado).reduce((s,o) => s+(parseFloat(o.precioBs)||0), 0);
+
+  const statusFilterOptions = ['pendiente','confirmado','en-proceso','en-ruta','entregado'];
 
   el.innerHTML = `
     <div class="summary-bar">
@@ -736,6 +746,15 @@ function render() {
         <div class="sum-num" style="color:var(--grass);font-size:18px">Bs ${totalVentasBs.toLocaleString('es-VE',{maximumFractionDigits:20})}</div>
         <div class="sum-label">Bs Entregados 💰</div>
       </div>
+    </div>
+
+    <div class="status-filter-bar">
+      <label for="status-filter-select">🏷️ Estado</label>
+      <select id="status-filter-select" class="status-filter-select" onchange="setStatusFilter(this.value)">
+        <option value="" ${statusFilter===''?'selected':''}>Todos los estados</option>
+        ${statusFilterOptions.map(s => `<option value="${s}" ${statusFilter===s?'selected':''}>${labelStatus(s)}</option>`).join('')}
+      </select>
+      ${statusFilter ? `<button class="status-filter-clear" onclick="setStatusFilter('')">Quitar</button>` : ''}
     </div>`;
 
   if (list.length === 0) {
@@ -777,7 +796,7 @@ function render() {
       .filter(o => o.status === 'entregado' && !o.cerrado)
       .reduce((s,o) => s+(parseFloat(o.precioUsd)||0), 0);
     const totalTag = totalDia > 0
-      ? `<span style="font-size:11px;font-weight:700;color:var(--grass)">$${totalDia.toFixed(0)}</span>`
+      ? `<span style="font-size:11px;font-weight:700;color:var(--grass)">€${totalDia.toFixed(0)}</span>`
       : '';
 
     div.innerHTML = `
@@ -1281,16 +1300,16 @@ function renderFinanzas() {
 
   el.innerHTML = `
     <div class="summary-bar" style="grid-template-columns:repeat(2,1fr);margin-bottom:12px">
-      <div class="sum-card"><div class="sum-num" style="color:var(--grass)">$${totalIngresos.toFixed(0)}</div><div class="sum-label">Ingresos (entregados)</div></div>
-      <div class="sum-card"><div class="sum-num" style="color:var(--rose)">$${totalExp.toFixed(0)}</div><div class="sum-label">Total gastos</div></div>
+      <div class="sum-card"><div class="sum-num" style="color:var(--grass)">€${totalIngresos.toFixed(0)}</div><div class="sum-label">Ingresos (entregados)</div></div>
+      <div class="sum-card"><div class="sum-num" style="color:var(--rose)">€${totalExp.toFixed(0)}</div><div class="sum-label">Total gastos</div></div>
     </div>
     <div class="summary-bar" style="grid-template-columns:repeat(2,1fr);margin-bottom:20px">
       <div class="sum-card" style="border:1.5px solid var(--grass-l)">
-        <div class="sum-num" style="color:${totalIngresos-totalExp>=0?'var(--grass)':'var(--rose)'}">$${(totalIngresos-totalExp).toFixed(0)}</div>
+        <div class="sum-num" style="color:${totalIngresos-totalExp>=0?'var(--grass)':'var(--rose)'}">€${(totalIngresos-totalExp).toFixed(0)}</div>
         <div class="sum-label">Utilidad neta</div>
       </div>
       <div class="sum-card" style="border:1.5px solid var(--lavender-l);background:var(--lavender-l)">
-        <div class="sum-num" style="color:var(--lavender);font-size:20px">$${((totalIngresos-totalExp)/2).toFixed(0)}</div>
+        <div class="sum-num" style="color:var(--lavender);font-size:20px">€${((totalIngresos-totalExp)/2).toFixed(0)}</div>
         <div class="sum-label" style="color:var(--lavender)">Utilidad ÷ 2 👥</div>
       </div>
     </div>
@@ -1779,6 +1798,11 @@ window.setTab = function(tab, el) {
   currentTab = tab;
   document.querySelectorAll('.nav-tab').forEach(t=>t.classList.remove('active'));
   if (el) el.classList.add('active');
+  render();
+};
+
+window.setStatusFilter = function(status) {
+  statusFilter = status;
   render();
 };
 
