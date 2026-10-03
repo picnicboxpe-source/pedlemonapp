@@ -875,8 +875,9 @@ function render() {
           ${o.medio?`<span class="meta-chip">📣 ${o.medio}</span>`:''}
           ${o.phone?`<span class="meta-chip">📱 ${o.phone}</span>`:''}
           ${(o.precioUsd||o.precioBs)?`<span class="meta-chip" style="color:var(--grass);font-weight:600">${fmtMoney(o.precioUsd,o.precioBs)}</span>`:''}
+          ${o.tasaEuro?`<span class="meta-chip">💱 Tasa: ${o.tasaEuro}</span>`:''}
         </div>
-        ${o.address?`<div style="font-size:12px;color:var(--ink3);margin-top:6px;padding-left:8px;display:flex;align-items:flex-start;gap:4px"><span>📍</span><span>${o.address}</span></div>`:''}
+        ${o.entrega?`<div style="font-size:12px;color:var(--ink3);margin-top:6px;padding-left:8px;display:flex;align-items:flex-start;gap:4px"><span>🚚</span><span>${o.entrega}</span></div>`:''}
         ${o.agencia?`<div style="font-size:12px;color:var(--ink2);margin-top:4px;padding-left:8px;padding-right:8px;display:flex;align-items:flex-start;gap:4px;background:var(--sun-l);border-radius:6px;padding-top:4px;padding-bottom:4px"><span>🏷️</span><span>Agencia: ${o.agencia}</span></div>`:''}`;
 
       // Open detail on tap (not during sort)
