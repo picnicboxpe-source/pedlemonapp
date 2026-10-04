@@ -295,6 +295,7 @@ main { padding:20px; max-width:680px; margin:0 auto; }
 .card-row1 { display:flex; align-items:flex-start; justify-content:space-between; margin-bottom:8px; padding-left:8px; }
 .client-name { font-family:'Playfair Display',serif; font-size:16px; color:var(--ink); flex:1; margin-right:8px; }
 .status-pill { font-size:10px; font-weight:700; padding:4px 10px; border-radius:100px; text-transform:uppercase; letter-spacing:.4px; white-space:nowrap; flex-shrink:0; }
+.pill-preventa { background:var(--lavender-l); color:#5A3A8A; }
 .pill-pendiente { background:var(--sun-l); color:#7A5000; }
 .pill-confirmado { background:var(--sky-l); color:#1A4A80; }
 .pill-en-proceso { background:var(--lavender-l); color:#4A2A7A; }
@@ -411,6 +412,7 @@ main { padding:20px; max-width:680px; margin:0 auto; }
 .status-selector { display:flex; flex-wrap:wrap; gap:8px; margin-top:4px; }
 .status-opt { padding:7px 16px; border-radius:100px; border:1.5px solid var(--border); font-family:'Plus Jakarta Sans',sans-serif; font-size:12px; font-weight:600; cursor:pointer; background:white; color:var(--ink2); transition:all .15s; }
 .status-opt:hover { border-color:var(--ink2); }
+.status-opt.active-preventa { background:var(--lavender-l); border-color:var(--lavender); color:#5A3A8A; }
 .status-opt.active-pendiente { background:var(--sun-l); border-color:var(--sun); color:#7A5000; }
 .status-opt.active-confirmado { background:var(--sky-l); border-color:var(--sky); color:#1A4A80; }
 .status-opt.active-en-proceso { background:var(--lavender-l); border-color:var(--lavender); color:#4A2A7A; }
@@ -502,7 +504,7 @@ main { padding:20px; max-width:680px; margin:0 auto; }
     <p class="sheet-sub">Pega el mensaje del cliente tal como llegó. El sistema lo interpreta y organiza.</p>
     <div id="import-step-1">
       <div class="wa-example">
-        💬 <strong>Ejemplo:</strong> Fecha en que se vendió: 28/03 · Fecha en que se entregó: 30/03 · Pedido: 2 correas cuero negro + 1 bolso mini beige · Cantidad: 2 · Nombre: María Pérez · Teléfono: 04141234567 · Entrega: Domicilio · Método de pago: Pago móvil · Monto Bs.: 1511,22 · Euros: 5 · Tasa Euro: 970,22 · Estatus: Entregado
+        💬 <strong>Ejemplo:</strong> Fecha en que se vendió: 28/03 · Fecha en que se entregó: 30/03 · Pedido: 2 correas cuero negro + 1 bolso mini beige · Cantidad: 2 · Nombre: María Pérez · Teléfono: 04141234567 · Medio: Instagram · Entrega: Domicilio · Método de pago: Pago móvil · Monto Bs.: 1511,22 · Euros: 5 · Tasa Euro: 970,22 · Estatus: Entregado
       </div>
       <div style="margin-bottom:14px">
         <textarea class="wa-textarea" id="wa-input" placeholder="Pega aquí el mensaje de WhatsApp..."></textarea>
@@ -722,7 +724,7 @@ function render() {
   const totalVentas = orders.filter(o=>o.status==='entregado' && !o.cerrado).reduce((s,o) => s+(parseFloat(o.precioUsd)||0), 0);
   const totalVentasBs = orders.filter(o=>o.status==='entregado' && !o.cerrado).reduce((s,o) => s+(parseFloat(o.precioBs)||0), 0);
 
-  const statusFilterOptions = ['pendiente','confirmado','en-proceso','en-ruta','entregado'];
+  const statusFilterOptions = ['preventa','pendiente','confirmado','en-proceso','en-ruta','entregado'];
 
   el.innerHTML = `
     <div class="summary-bar">
@@ -1976,6 +1978,7 @@ Pedido:
 Cantidad:
 Nombre:
 Teléfono:
+Medio:
 Entrega:
 Método de pago:
 Monto Bs:
@@ -2205,6 +2208,7 @@ function parseLocal(raw) {
     if (/en\s*-?\s*ruta|camino/.test(l)) return 'en-ruta';
     if (/proceso/.test(l)) return 'en-proceso';
     if (/confirmad/.test(l)) return 'confirmado';
+    if (/preventa|pre\s*-?\s*venta/.test(l)) return 'preventa';
     if (/pendient/.test(l)) return 'pendiente';
     return null;
   }
@@ -2272,13 +2276,13 @@ function previewFieldsHTML(d) {
     ${pf('cantidad','🔢 Cantidad',d.cantidad)}
     ${pf('clientName','👤 Nombre',d.clientName,true)}
     ${pf('phone','📱 Teléfono',d.phone)}
+    ${pf('medio','📣 Medio',d.medio)}
     ${pf('entrega','🚚 Entrega',d.entrega)}
     ${pf('medioPago','💳 Método de pago',d.medioPago)}
     ${pf('precioBs','💵 Monto Bs',d.precioBs)}
     ${pf('precioUsd','💶 Euros',d.precioUsd)}
     ${pf('tasaEuro','💱 Tasa Euro',d.tasaEuro)}
     ${pfStatus('status','🏷️ Estatus',d.status)}
-    ${pf('medio','📣 Medio',d.medio)}
     ${pf('address','🏠 Dirección de envío',d.address,true)}
     ${pf('agencia','🏷️ Código de agencia',d.agencia)}
     ${pf('envioUsd','🚚 Costo de envío €',d.envioUsd)}
@@ -2296,7 +2300,7 @@ function pf(key, label, val, full=false, isDate=false) {
 
 // Select de estatus — siempre guarda uno de los valores fijos que usa el panel
 function pfStatus(key, label, val) {
-  const options = ['pendiente','confirmado','en-proceso','en-ruta','entregado'];
+  const options = ['preventa','pendiente','confirmado','en-proceso','en-ruta','entregado'];
   const selected = options.includes(val) ? val : 'pendiente';
   return `<div class="pfield"><div class="pfield-label">${label}</div>
     <select class="field-input" data-key="${key}">
@@ -2410,7 +2414,7 @@ window.openDetail = function(id) {
   const o = orders.find(x=>x.id===id);
   if (!o) return;
   const sheet = document.getElementById('detail-sheet');
-  const statusOptions = ['pendiente','confirmado','en-proceso','en-ruta','entregado'];
+  const statusOptions = ['preventa','pendiente','confirmado','en-proceso','en-ruta','entregado'];
 
   sheet.innerHTML = `
     <div class="sheet-handle"></div>
@@ -2596,7 +2600,7 @@ function fmtMoney(usd, bs) {
 }
 
 function labelStatus(s) {
-  return {pendiente:'Pendiente',confirmado:'Confirmado','en-proceso':'En proceso','en-ruta':'En ruta',entregado:'Entregado'}[s]||'Pendiente';
+  return {preventa:'Preventa',pendiente:'Pendiente',confirmado:'Confirmado','en-proceso':'En proceso','en-ruta':'En ruta',entregado:'Entregado'}[s]||'Pendiente';
 }
 
 function showToast(msg) {
